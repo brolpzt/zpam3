@@ -61,7 +61,7 @@ GetCvars(arr)
 	arr = ruleCvarDefault(arr, "scr_replace_russian", 0); 					// Replace russians with Americans / Brisith
 	arr = ruleCvarDefault(arr, "scr_blackout", 0); 						// If match is in progress, show map background all over the screen and disable sounds for connected player
 	arr = ruleCvarDefault(arr, "scr_recording", 0); 						// Starts automatically recording when match starts
-	arr = ruleCvarDefault(arr, "scr_matchinfo", 0); 						// Show match info in menu (1 = without team names, 2 = with team names)
+	arr = ruleCvarDefault(arr, "scr_matchinfo", 2); 						// Show match info in menu (1 = without team names, 2 = with team names)
 	arr = ruleCvarDefault(arr, "scr_map_vote", 0);						// Open voting system so players can vote about next map
 	arr = ruleCvarDefault(arr, "scr_map_vote_replay", 0);					// Show option to replay this map in voting system
 	arr = ruleCvarDefault(arr, "scr_remove_killtriggers", 1);					// Remove some of the kill-triggers created in 1.3 path
@@ -77,7 +77,7 @@ GetCvars(arr)
 	// Not Likely to Change
 	arr = ruleCvarDefault(arr, "g_allowVote", 0);
 	arr = ruleCvarDefault(arr, "g_maxDroppedWeapons", 10);
-	arr = ruleCvarDefault(arr, "sv_fps", 30);
+	arr = ruleCvarDefault(arr, "sv_fps", 30/*40*/); // CoD2x since version 1.4.3.1 allows 40 snaps
 	arr = ruleCvarDefault(arr, "sv_maxRate", 25000);
 	arr = ruleCvarDefault(arr, "sv_timeout", 60);					// Time after 999 player is kicked
 	arr = ruleCvarDefault(arr, "g_antilag", 0);					// Antilag 1 means that players ping is considered when calculating hit location - what you see on your monitor is also what the server will see

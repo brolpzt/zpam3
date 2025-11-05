@@ -2,7 +2,7 @@
 
 init()
 {
-	addEventListener("onConnected",  	::onConnected);
+	addEventListener("onSpawned",  		::onSpawned);
 	addEventListener("onCvarChanged", 	::onCvarChanged);
 
 
@@ -10,7 +10,7 @@ init()
 	if (!isDefined(level.warnings_visible))	// may be already defined if update() is called from another file
 		level.warnings_visible = false;
 	if (!isDefined(level.warnings_text))
-		level.warnings_text = false;
+		level.warnings_text = "";
 
 	thread sv_cheats_update();
 
@@ -20,9 +20,14 @@ init()
 		hide();
 }
 
-onConnected()
+onSpawned()
 {
-	self setClientCvarIfChanged("ui_serverinfo_hud", level.warnings_text);
+	str = level.warnings_text;
+	// If player is streamer, hide warnings
+	if (self.pers["team"] == "streamer")
+		str = "";
+
+	self setClientCvarIfChanged("ui_serverinfo_hud", str);
 }
 
 sv_cheats_update()
@@ -71,8 +76,8 @@ update()
 	errors = "";
 
 	// ZPAM_RENAME
-	//errors += "^3This is testing version of PAM, server may crash!^7\n";
-	//errors += "^3Report feedback to eyza#7930^7\n";
+	/*errors += "^3This is testing version of PAM, server may crash!^7\n";
+	errors += "^3Report feedback to eyza#7930^7\n";*/
 
 	if (getcvarint("sv_cheats"))
 	{
@@ -81,6 +86,17 @@ update()
 	if (getcvar("g_password") == "")
 	{
 		errors += "^3Server password is not set!^7\n";
+	}
+	if (getcvarint("sv_cracked"))
+	{
+		errors += "^3Server is cracked!^7\n";
+	}
+	if (getCvar("shortversion") == "1.3" || getCvar("shortversion") == "1.2" || getCvar("shortversion") == "1.1" || getCvar("shortversion") == "1.0")
+	{
+		errors += "^3Server is running old version of game.\nVersion " + getCvar("shortversion") + " is not fully supported.^7\n";
+	}
+	else if (getCvarInt("g_cod2x") < 5) {
+		errors += "^3Server is running old version of CoD2x!\nVersion 1.4." + getCvarInt("g_cod2x") + ".x is not fully supported (CoD2x >=1.4.5.x is expected).^7\n";
 	}
 
 	map = level.mapname;
@@ -113,6 +129,10 @@ update()
 	players = getentarray("player", "classname");
 	for(i = 0; i < players.size; i++)
 	{
+		// If player is streamer, hide warnings
+		if (players[i].pers["team"] == "streamer")
+			str = "";
+
 		players[i] setClientCvarIfChanged("ui_serverinfo_hud", str);
 	}
 }

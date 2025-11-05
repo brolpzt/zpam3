@@ -1,26 +1,32 @@
 # Introduction
 
-Mod zPAM3.34 is a new version of PAM mode for CoD2. <br>
+Mod zPAM is a competitive mod for CoD2. <br>
 
 The code from the previous version zPAM 2.07 was completely rewritten and ported to a new code base, which helped in the implementation of new features and bug fixes.
 
 Work on this PAM was initiated by me in 2015 and was never fully finished. On corona days, I decided to finish it.
 
 ❗ Note ❗ <br>
-*This page describe only actual version zPAM 3.34.<br>
+*This page describe only actual version zPAM 4.01.<br>
 To see description of previous versions, click on the links in [Version list](#version-list).*
 
 ## Download
-- #### Actual version
-	- 2024/08/25 - <b><a href="https://github.com/eyza-cod2/zpam3/releases/download/3.34/zpam334.zip">zPAM 3.34 - zpam334.zip</a></b>
+- #### Actual version for CoD2x 1.4
+	- 2025/11/04 - <b><a href="https://github.com/eyza-cod2/zpam3/releases/download/4.01/zpam401.zip">zPAM 4.01 - zpam401.zip</a></b> - compatible with CoD2x 1.4.6.1 and higher.
 
-- #### Previous version
-	- 2023/08/30 - <b><a href="https://github.com/eyza-cod2/zpam3/releases/download/3.33/zpam333.zip">zPAM 3.33 - zpam333.zip</a></b>
-
-
+- #### Actual version for 1.3
+	- 2025/09/15 - <b><a href="https://github.com/eyza-cod2/zpam3/releases/download/3.36/zpam336.zip">zPAM 3.36 - zpam336.zip</a></b> - compatible with CoD2 1.0, 1.2 and 1.3
 
 ## Version list
-- 2024/08/25 - <b>zPAM 3.34</b>
+- 2025/11/03 - <b>zPAM 4.00 TEST 6 • CoD2x</b>
+- 2025/10/27 - <b>zPAM 4.00 TEST 5 • CoD2x</b>
+- 2025/10/19 - <b>zPAM 4.00 TEST 4 • CoD2x</b>
+- 2025/10/13 - <b>zPAM 4.00 TEST 3 • CoD2x</b>
+- 2025/09/21 - <b>zPAM 4.00 TEST 2 • CoD2x</b>
+- 2025/09/20 - <b>zPAM 4.00 TEST 1 • CoD2x</b>
+- 2025/09/15 - <b><a href="https://github.com/eyza-cod2/zpam3/tree/0ed8a460cddaffb7de0c1b54ce115c4c8dcdcbe6">zPAM 3.36</a></b>
+- 2025/09/02 - <b><a href="https://github.com/eyza-cod2/zpam3/tree/2f22c5afbe6ba1a471e9a2cbbd98eee2025cd1de">zPAM 3.35</a></b>
+- 2024/08/25 - <b><a href="https://github.com/eyza-cod2/zpam3/tree/e73c0fd786781238b6ee5f3e1b81580da84cbf76">zPAM 3.34</a></b>
 - 2023/08/30 - <b><a href="https://github.com/eyza-cod2/zpam3/tree/abbc16d244a820aa08372d4238cb53062f90ced0">zPAM 3.33</a></b>
 - 2022/02/24 - <b><a href="https://github.com/eyza-cod2/zpam3/tree/c29866e22a6bcfd739515006e465062ec5a9e1f7">zPAM 3.32 PREVIEW</a></b>
 - 2022/10/13 - <b><a href="https://github.com/eyza-cod2/zpam3/tree/3239562802398e9eb16aecb09c8d03e6f902d7ce">zPAM 3.31 PREVIEW</a></b>
@@ -37,6 +43,141 @@ To see description of previous versions, click on the links in [Version list](#v
 
 
 ## Changelog
+
+<details><summary>zPAM 4.01 changes (click to open)</summary>
+<p>
+
+**Changes / Fixes / Improvements:**
+- All changes from zPAM 4.00 TEST 1 to zPAM 4.00 TEST 6
+</p>
+</details>
+
+
+
+
+<details><summary>zPAM 4.00 TEST 6 changes (click to open)</summary>
+<p>
+
+**Changes / Fixes / Improvements:**
+- Adjusted developer scripts
+- Allowing score change at any time in LAN mode
+- Fix of server crash when player disconnect in match
+- New demo recording + uploading using CoD2x
+- Enable readyup auto-resume on LAN
+- Streamer config, minor adjustements
+- Streamer bird camera
+- vMIX support
+- Streamer spectated player name as cvar
+</p>
+</details>
+
+
+
+
+<details><summary>zPAM 4.00 TEST 5 changes (click to open)</summary>
+<p>
+
+**Changes / Fixes / Improvements:**
+- New "draw" sub mode to disable overtime
+- Usage of new CoD2x functions getStance and getViewOrigin
+</p>
+</details>
+
+
+
+
+<details><summary>zPAM 4.00 TEST 4 changes (click to open)</summary>
+<p>
+
+**Changes / Fixes / Improvements:**
+- Check if all players are ready once streamer joins team and there is atleast once player in allies or axis
+- Black list of old CoD2x versions
+- Match system: Some of the variables moved from CoD2x to zPAM
+- Match system: Force player nicknames if required by match
+</p>
+</details>
+
+
+
+
+<details><summary>zPAM 4.00 TEST 3 changes (click to open)</summary>
+<p>
+
+**Changes / Fixes / Improvements:**
+- Radar images for TJ, BG, DW, MAT, CAR, RAIL
+- Streamer improvements, red-blue layout
+- New matchinfo menu + bar, support for DM (1v1, stats), readyup waiting (missing, unjoined or mixed players), preventing map change after first round, nick warning
+- Fixed not dissapearing hit icon when 2 players are hited in same time
+</p>
+</details>
+
+
+
+
+<details><summary>zPAM 4.00 TEST 2 changes (click to open)</summary>
+<p>
+
+**Changes / Fixes / Improvements:**
+- Match system: added "state" key to signalize finished map
+- Match system: allow map change until map order is known
+</p>
+</details>
+
+
+
+
+<details><summary>zPAM 4.00 TEST 1 changes (click to open)</summary>
+<p>
+
+**Changes / Fixes / Improvements:**
+- Faster loading of objectives on round start on compass
+- New functions for developer
+- Clock in strat always visible (0:00)
+- Added objective icons (plant labels) in strat
+- Fixed double-hit sound via nade, added double-cross hit icon when 2 or more player are hit
+- Added warning about unsupported game version (1.0, 1.2, 1.3 and old CoD2x versions)
+- Added sv_cracked to be monitor for changes
+- Added scr_posters into ignored cvars + prevent restart when match system is activated
+- New streamer layout (CoD2x)
+- Match system support (CoD2x)
+- Competitive settings (limits of max fps, wait command,etc) (CoD2x)
+- Flag for first time player connects
+- Added CodeCallback_StopGameType (CoD2x)
+- Added support for sv_fps 40 (introduced in CoD2x)
+- Improved text when player call pistol bash
+- Fixed weapon count cvars for nades and smokes, used in custom settings for public servers
+</p>
+</details>
+
+
+
+
+<details><summary>zPAM 3.36 changes (click to open)</summary>
+<p>
+
+**Changes / Fixes / Improvements:**
+- new mappack version 6
+  - updated maps: mp_railyard_mjr, mp_leningrad_mjr
+- detection of CoD2x
+</p>
+</details>
+
+
+
+
+<details><summary>zPAM 3.35 changes (click to open)</summary>
+<p>
+
+**Changes / Fixes / Improvements:**
+- new mappack version 5
+  - new maps: mp_railyard_mjr, mp_leningrad_mjr
+  - removed killtriggers on mp_trainstation_fix (Caen)
+- requirement to rename zzz_zpam_custom.iwd to something unique (e.g. zzz_zpam_custom_fpschallange_v1.iwd).
+- adjusted text of zPAM installation error message
+</p>
+</details>
+
+
 
 <details><summary>zPAM 3.34 changes (click to open)</summary>
 <p>
@@ -356,9 +497,9 @@ r_polygonOffsetScale and r_polygonOffsetBias warning appears even if they were c
 
 ## Installation
 
-- Download <b><a href="https://github.com/eyza-cod2/zpam3/releases/download/3.34/zpam334.zip">zPAM 3.34</a></b> and extract files into following locations:
-	- ./Call of Duty 2/main/zpam334.iwd
-	- ./Call of Duty 2/main/zpam_maps_v4.iwd <i>(*required only for 1.3 game version)</i>
+- Download <b><a href="https://github.com/eyza-cod2/zpam3/releases/download/4.01/zpam401.zip">zPAM 4.01</a></b> and extract files into following locations:
+	- ./Call of Duty 2/main/zpam401.iwd
+	- ./Call of Duty 2/main/zpam_maps_v6.iwd <i>(*not required for 1.0 and 1.2 game version)</i>
 	- ./Call of Duty 2/main/server.cfg
 
 
@@ -371,7 +512,7 @@ r_polygonOffsetScale and r_polygonOffsetBias warning appears even if they were c
 
 
 - For game version 1.3:
-	- Mappack file <b>zpam_maps_v4.iwd</b> needs to be included in main folder. [What is zpam_maps_v4.iwd file?](#what-is-zpam_maps_v4iwd-file)
+	- Mappack file <b>zpam_maps_v6.iwd</b> needs to be included in main folder. [What is zpam_maps_v6.iwd file?](#what-is-zpam_maps_v6iwd-file)
 	- Fast download must be enabled via these settings (custom URL may be used):
 		- <b>sv_wwwDownload 1</b>
 		- <b>sv_wwwBaseURL "http://cod2x.me/zpam"</b>
@@ -428,7 +569,7 @@ cokY, Sk1lzZ, kebit, foxbuster, <==Mustang==>Clan from Hungary, hubertgruber / d
 
 ## Questions & Answers
 
-### What is zpam_maps_v4.iwd file
+### What is zpam_maps_v6.iwd file
 
 | Name              | Game name           | Credit                                     | More info                                      |
 |-------------------|---------------------|--------------------------------------------|------------------------------------------------|
@@ -445,7 +586,10 @@ cokY, Sk1lzZ, kebit, foxbuster, <==Mustang==>Clan from Hungary, hubertgruber / d
 | Leningrad TLS     | `mp_leningrad_tls`    | by Fjozek, craven                          |                                                |
 | Dawnville SUN     | `mp_dawnville_sun`    | by Fjozek, craven                          |                                                |
 | Crossroads        | `mp_crossroads`       | by Fjozek, craven, eyza                    |                                                |
-| Carentan BAL | `mp_carentan_bal`     | by Fjozek, craven                          |                                                |
+| Carentan BAL      | `mp_carentan_bal`     | by Fjozek, craven                          |                                                |
+| Railyard MJR v4   | `mp_railyard_mjr`     | by UnaRkW, eyza, craven                    |                                                |
+| Leningrad MJR v4  | `mp_leningrad_mjr`    | by everestt, eyza, craven                  |                                                |
+
 
 
 
@@ -775,6 +919,23 @@ Example: "autorecording_1|matchinfo_1|score_0|playersleft_1"
 
 <br>
 
+### Match info
+- <img src="images/streamer_menu_teams.png" /><br>
+- Teams are always on the same side
+- Only the color of team is changing according to side of the team (allies: blue, axis: red)
+
+#### Match connected to online platform
+- <img src="images/match_bar.png" /><br>
+
+#### Match might force placers to use nicknames
+- <img src="images/nick_match_name.png" /><br>
+
+#### Match overview in menu
+- <img src="images/match_menu.png" /><br>
+
+
+<br>
+
 ### How does the "Streamer" and "Auto-spectator" feature works / what is it
 - <img src="images/streamer.png" /><br><br>
 - There is a new team called "Streamer" that you can join when you connect the server
@@ -793,7 +954,7 @@ Example: "autorecording_1|matchinfo_1|score_0|playersleft_1"
 	- Free spectating - follow close by player
 
 #### HUD overlay
-- <img src="images/streamer_menu.png" /><br><br>
+
 - When you join a streamer team, a new **streamer menu** overlay will open
 - Streamer menu is needed to detect mouse and keys detection
 - Binds are not working while this menu is open
@@ -801,48 +962,13 @@ Example: "autorecording_1|matchinfo_1|score_0|playersleft_1"
 - When the streamer menu is joined for the first time, you have to confirm this via Space key.
 - Once confirmed, you will automatically join streamer menu again when the map changes
 - You are automatically set as ready in Ready-up period.
-- Players are automatically renamed if their nickname contains double-colors (^^xx) when there is a streamer. (reason: avoid confusing team colors for viewers of stream)
-
-##### Match info
-- <img src="images/streamer_menu_teams.png" /><br>
-- Teams are always on the same side
-- Only the color of team is changing according to side of the team (allies: blue, axis: red)
-
-##### Followed player info
-- Under the "following" text, there is a status of player switching
-- <img src="images/streamer_following_status.png" /><br>
-- It tells the reason why the followed player was changed
-- Greenish background color means that spectated player can be changed by auto-spectator at any time
-- Grayish background color means that this player is locked for some time
-- No background color means auto-spectator is turned off and switching is controlled manually
-
-##### Players bars
-- <img src="images/streamer_player_bars2.png" /><br>
-- Bars shows the following info about the players:
-	- Health - indicated by the changed width of colored bar
-	- Weapons (pistols are not showed)
-	- Number of greandes / smokes
-	- Kills and deaths
-	- Number of kills in this round (indicated with green color next to kills and deaths)
-- When the player is dead, bar is more transparent and dead icon is showed
-- Currently followed player is indicated with white rectangle with an arrow next to it
-- Players are sorted by their ID and not via score<br><br>
-- <img src="images/streamer_player_bars.png" /><br>
-- You can use keys [1,2,3,4,5] to switch to player from team 1 and keys [6,7,8,9,0] from team 2
-- Number of individual player is showed when help is showed via Space key
-
 
 ##### Score progress
-- <img src="images/streamer_score_progress.png" /><br>
 - Score progress shows who win the round via team color
 - Halftime is indicated via "|" character
 - Timeout is indicated via "[T]" characters
 - Overtime is indicated via "[O]" characters
 
-
-##### Player xvx progress
-- <img src="images/streamer_player_progress.png" /><br>
-- Player progress indicate which team killed a player and the number of players in that time
 
 ##### Hit info
 - <img src="images/streamer_hitinfo.png" /><br>
@@ -851,7 +977,7 @@ Example: "autorecording_1|matchinfo_1|score_0|playersleft_1"
 
 
 ##### Planter / defuser info
-- <img src="images/streamer_plant_defuse.png" /><br>
+
 - When some player is planting or defusing a bomb, its indicated on the screen
 
 <br><br>
@@ -888,7 +1014,6 @@ Example: "autorecording_1|matchinfo_1|score_0|playersleft_1"
 
 
 #### Replay (killcam)
-- <img src="images/streamer_killcam_menu.png" /><br>
 - Actions are kills by players. When multiple kills happends within period of 5 seconds between each kill, these kills are saved as action.
 - You can replay an action via opening replay menu via R key and choosing the action via [1,2,3,4,5,6,7,8,9] keys
 - Actions are automatically replayed at the end of the round (if there are any)
@@ -899,7 +1024,6 @@ Example: "autorecording_1|matchinfo_1|score_0|playersleft_1"
 
 
 #### XRAY
-- <img src="images/streamer_xray.png" /><br><br>
 - Enemies behind wall are visualized via stance icons
 - If enemy is damaged, they have red color
 - Player nicknames are showed above the stance icon
@@ -909,7 +1033,6 @@ Example: "autorecording_1|matchinfo_1|score_0|playersleft_1"
 
 
 #### Free spectating - follow close by player
-- <img src="images/streamer_closeby.png" /><br><br>
 - When you are free spectating and you are looking at some player, this player will will be followed if you clock Left or Right mouse key
 - The player nickname must be indicated by text in upper part of the screen
 - XRAY needs to be enabled (wich is automatically enabled when entering free spectating)
@@ -944,7 +1067,7 @@ Make sure cvar /fs_game is empty (+set fs_game "") and iwd files are placed in m
  - Since version 3.20, all iwd files have to be installed in main folder.
 This is because of bug that player's settings changed in game are not saved into the config when running a game with fs_game set.
 
-#### Iwd file zpam_maps_v4.iwd does not exists in main folder
+#### Iwd file zpam_maps_v6.iwd does not exists in main folder
 - Since version 3.20, fixed versions of some maps are available. PAM is forcing to include these files to make sure maps are available on every server.
 
 #### Error while getting loaded iwd files. Make sure iwd files does not contains spaces.
@@ -1056,6 +1179,7 @@ Attackers should take both objectives to the goal (blue box) to win. (or elimina
 | 2v2 | Scope and shotgun weapon disabled|
 | rifle | Bolt action and sniper only, no grenades, no weapon drop|
 | russian | Russian side is enabled on russian maps |
+| draw | Overtime is disabled |
 | lan | Readyup warnings are disabled |
 | custom | custom ruleset |
 
@@ -1322,7 +1446,20 @@ Added posibility to call bash mode from menu.<br>
 [3.3.77] Updating of the scoreboard every round to have it available when replaying demos (scoreboard is by default updated only when is opened by player)<br>
 [3.3.78] Added empty name protection - if empty name is used for first time, player is warned and renamed. The second time player is kicked.<br>
 [3.3.79] LOD models - forcing tanks, cars, trucks, and artillery flak to be always rendered at high detail (this fixes holes in models at long distances)<br>
-
+[3.3.80] Allowing score change at any time in LAN mode<br>
+[3.3.81] Enable readyup auto-resume on LAN<br>
+[3.3.82] New demo recording + uploading using CoD2x<br>
+[3.3.83] Streamer bird camera<br>
+[3.3.84] vMIX support<br>
+[3.3.85] New "draw" sub mode to disable overtime<br>
+[3.3.86] Match system: Force player nicknames if required by match<br>
+[3.3.87] Radar<br>
+[3.3.88] Added objective icons (plant labels) in strat<br>
+[3.3.89] Fixed double-hit sound via nade, added double-cross hit icon when 2 or more player are hit<br>
+[3.3.90] New streamer layout (CoD2x)<br>
+[3.3.91] Match system support (CoD2x)<br>
+[3.3.92] Competitive settings (limits of max fps, wait command, etc) (CoD2x)<br>
+[3.3.93] Added support for sv_fps 40 (introduced in CoD2x)<br>
 
 </sub>
 

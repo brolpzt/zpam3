@@ -24,6 +24,9 @@ init()
 	addEventListener("onSpawnedStreamer",  ::onSpawnedStreamer);
 	addEventListener("onConnectedAll",    	::onConnectedAll);
 	addEventListener("onMenuResponse",  	::onMenuResponse);
+	addEventListener("onCvarChanged", ::onCvarChanged);
+
+	registerCvar("scr_vmix", "INT", 0, 0, 2);
 
 	//setCvar("debug_spectator", 1);
 }
@@ -38,7 +41,6 @@ onConnected()
 		self.pers["streamerSystem_menu_opened"] = false;
 		self.pers["streamerSystem_menu_open_confirmed"] = false;
 		self.pers["streamerSystem_keysConfirmed"] = false;
-		self.pers["streamerSystem_streamerTime"] = 0;
 		self.pers["streamerSystem_autoJoinSpectatorTeam"] = false;
 		self.pers["streamerSystem_scoreboardOpenedAutomatically"] = false;
 		self.pers["streamerSystem_colorMode"] = 1;
@@ -48,6 +50,7 @@ onConnected()
 	self.streamerSystem_turnedOn = false;		// menu is opened
 	self.streamerSystem_freeSpectating = true; 	// free spectating, not following any player
 	self.streamerSystem_inCinematic = false;
+	self.streamerSystem_inBirdView = false;
 
 	// Switched to readyup (halft, timeout..) -> imidietly hide bars
 	if (level.streamerSystem && level.in_readyup)
@@ -61,7 +64,6 @@ onConnected()
 onConnectedAll()
 {
 	level thread spectating_loop();
-	level thread player_names();
 }
 
 // Called even if streamer system is disabled
@@ -101,6 +103,21 @@ onSpawnedStreamer()
 	}
 }
 
+
+
+// This function is called when cvar changes value.
+// Is also called when cvar is registered
+// Return true if cvar was handled here, otherwise false
+onCvarChanged(cvar, value, isRegisterTime)
+{
+	switch(cvar)
+	{
+		case "scr_vmix":
+			level.scr_vmix = value;
+			return true;
+	}
+	return false;
+}
 
 
 
@@ -158,7 +175,7 @@ join_streamer_enable(loaded_from_settings, color_mode)
 		if (loaded_from_settings && !isDefined(self.pers["firstTeamSelected"]))
 		{
 			// Set color mode
-			self.pers["streamerSystem_colorMode"] = color_mode;
+			self.pers["streamerSystem_colorMode"] = 1; //color_mode;
 
 			self thread move_to_streamers();
 		}
@@ -192,7 +209,7 @@ join_streamer_toggle()
 
 // 1 = blue red (default)
 // 2 = cyan purple
-toggle_color_mode()
+/*toggle_color_mode()
 {
 	self endon("disconnect");
 
@@ -204,7 +221,7 @@ toggle_color_mode()
 		self.pers["streamerSystem_colorMode"] = 1;
 
 	self maps\mp\gametypes\_quicksettings::updateClientSettings("streamer_color");
-}
+}*/
 
 
 
@@ -305,6 +322,8 @@ onMenuResponse(menu, response)
 			// We were in cinematic move, cancel it
 			if (self.streamerSystem_inCinematic)
 				self.streamerSystem_inCinematic = false;
+			if (self.streamerSystem_inBirdView)
+				self.streamerSystem_inBirdView = false;
 
 			// Shift is automatically closing the menu to hide cursor
 			self.pers["streamerSystem_menu_opened"] = false;
@@ -352,6 +371,42 @@ onMenuResponse(menu, response)
 			return true;
 		}
 
+		// C
+		else if (response == "camera")
+		{
+			if (self.streamerSystem_inCinematic)
+				self.streamerSystem_inCinematic = false;
+
+			// Shift is automatically closing the menu to hide cursor
+			self.pers["streamerSystem_menu_opened"] = false;
+			self thread maps\mp\gametypes\_streamer_hud::keys_hide();
+			self thread maps\mp\gametypes\_streamer_hud::HUD_ActivateStreamerSystem_show();
+
+			// In killcam the shift melee key does not work, so we closed the menu but we cannot continue untill killcam ends
+			if (isDefined(self.killcam))
+				return true;
+
+			// Disable streamer system to be able to register player's shift key to stop following player
+			if (self.streamerSystem_turnedOn)
+			{
+				self streamerSystemTurnOff();
+				if (level.debug_spectator) self iprintln("MENU_SHIFT> ^1streamer system turned OFF");
+			}
+
+			// Force leaving followed player by simulation SHIFT key press on client
+			// Exec command on client side
+			// If some menu is already opened:
+			//	- by player (main menu / quick messages) -> NOT WORKING - command will not be executed
+			//	- by player (by ESC key) -> that menu will be closed
+			//  	- by script (via openMenu()) -> that menu will be closed and exec_cmd will not be closed correctly
+			//			(mouse will be visible with clear backgorund.... so closeMenu() is called to close that menu)
+			self setClientCvar2("exec_cmd", "+melee; -melee");
+			self openMenu(game["menu_exec_cmd"]);		// open menu via script
+			self closeMenu();				// will only close menu opened by script
+
+			self thread birdMove();
+		}
+
 		// Left mause | Right mouse
 		// not received in free spectating, because menu mouse is not working
 		else if (response == "mouse1" || response == "mouse2")
@@ -362,6 +417,11 @@ onMenuResponse(menu, response)
 			if (self.streamerSystem_inCinematic)
 			{
 				self.streamerSystem_inCinematic = false;
+				return true;
+			}
+			if (self.streamerSystem_inBirdView)
+			{
+				self.streamerSystem_inBirdView = false;
 				return true;
 			}
 
@@ -416,7 +476,7 @@ onMenuResponse(menu, response)
 		}
 
 		// C
-		else if (response == "color")
+		/*else if (response == "color")
 		{
 			// Ignore in killcam or if menu is closed
 			if (isDefined(self.killcam) || self.pers["streamerSystem_menu_opened"] == false)
@@ -430,7 +490,7 @@ onMenuResponse(menu, response)
 			self thread openStreamerMenu();
 
 			return true;
-		}
+		}*/
 
 		// Space button
 		else if (response == "help")
@@ -498,6 +558,8 @@ onMenuResponse(menu, response)
 				// We were in cinematic move, cancel it
 				if (self.streamerSystem_inCinematic)
 					self.streamerSystem_inCinematic = false;
+				if (self.streamerSystem_inBirdView)
+					self.streamerSystem_inBirdView = false;
 
 				if (self.streamerSystem_turnedOn == false)
 				{
@@ -768,7 +830,7 @@ player_loop()
 		}
 
 		// Make sure we always follow somebody
-		if (self.streamerSystem_turnedOn && !self.streamerSystem_inCinematic && !isDefined(self.killcam) && self.sessionstate == "spectator" && level.streamerSystem_playerID != self.spectatorclient)
+		if (self.streamerSystem_turnedOn && !self.streamerSystem_inCinematic && !self.streamerSystem_inBirdView && !isDefined(self.killcam) && self.sessionstate == "spectator" && level.streamerSystem_playerID != self.spectatorclient)
 		{
 			self.spectatorclient = level.streamerSystem_playerID;
 
@@ -818,9 +880,12 @@ player_loop()
 			{
 				self setClientCvar2("cl_bypassMouseInput", cl_bypassMouseInput);
 				self.pers["streamerSystem_bypassMouseInput"] = cl_bypassMouseInput;
+
 			}
 
 		}
+
+		self setClientCvarIfChanged("m_enable", !self.pers["streamerSystem_menu_opened"] || (self.streamerSystem_freeSpectating && !self.streamerSystem_inBirdView)); // CoD2x cvar to disable cursor movement, but keep system cursor ingame
 	}
 }
 
@@ -831,6 +896,17 @@ handleAttackButtonPress()
 	self endon("disconnect");
 
 	if (level.debug_spectator) self iprintln("attackBtn");
+
+	if (self.streamerSystem_inCinematic)
+	{
+		self.streamerSystem_inCinematic = false;
+		if (level.debug_spectator) self iprintln("attackBtn> cinematic move canceled");
+	}
+	if (self.streamerSystem_inBirdView)
+	{
+		self.streamerSystem_inBirdView = false;
+		if (level.debug_spectator) self iprintln("attackBtn> bird view canceled");
+	}
 
 	player = level getNextPlayerFrom(level.streamerSystem_player);
 
@@ -942,6 +1018,12 @@ cinematicMove()
 			if (level.debug_spectator) self iprintln("cinematic> canceled because team != streamer");
 			self.streamerSystem_inCinematic = false;
 		}
+		// Bird view turned on
+		if (self.streamerSystem_inBirdView)
+		{
+			if (level.debug_spectator) self iprintln("cinematic> canceled because bird view is ON");
+			self.streamerSystem_inCinematic = false;
+		}
 		// Alive player that was followed spawned to spectators
 		if (level.streamerSystem_playerID == self getEntityNumber())
 		{
@@ -989,6 +1071,7 @@ cinematicMove()
 				self iprintln("^1cinematic> canceled");
 
 				if (!self.streamerSystem_turnedOn) 		self iprintln("cinematic> ^1self.streamerSystem_turnedOn = false");
+				if (!self.streamerSystem_inBirdView) 	self iprintln("cinematic> ^1self.streamerSystem_inBirdView = false");
 				if (!self.pers["streamerSystem_menu_opened"]) 	self iprintln("cinematic> ^1self.pers[streamerSystem_menu_opened] = false");
 				if (self.sessionstate != "spectator") 		self iprintln("cinematic> ^1self.sessionstate != spectator");
 				if (level.streamerSystem_playerID == -1) 	self iprintln("cinematic> ^1level.streamerSystem_playerID = -1");
@@ -1065,6 +1148,12 @@ cinematicMove()
 			if (level.debug_spectator) self iprintln("cinematic> DONE because it was canceled");
 			break;
 		}
+		// Bird view was activated
+		if (self.streamerSystem_inBirdView)
+		{
+			if (level.debug_spectator) self iprintln("cinematic> DONE because bird view is ON");
+			break;
+		}
 		// Player changed team
 		if (self.pers["team"] != "streamer")
 		{
@@ -1100,6 +1189,292 @@ cinematicMove()
 
 	self.streamerSystem_inCinematic = false;
 }
+
+
+
+computeBirdOrigin() {
+
+	data = [];
+	data["origin"] = (0, 0, 0);
+	data["angle"] = (0, 0, 0);
+	data["distance"] = 0;
+	data["status"] = false;
+
+	alliesPlayers = [];
+	axisPlayers = [];
+	players = getentarray("player", "classname");
+
+	// Separate players by team
+	for (i = 0; i < players.size; i++) {
+		player = players[i];
+		if (player.sessionstate == "playing") {
+			if (player.pers["team"] == "allies") {
+				alliesPlayers[alliesPlayers.size] = player;
+			} else if (player.pers["team"] == "axis") {
+				axisPlayers[axisPlayers.size] = player;
+			}
+		}
+	}
+
+	if (alliesPlayers.size == 0 || axisPlayers.size == 0) {
+		if (alliesPlayers.size == 0 && axisPlayers.size > 0) {
+			alliesPlayers = axisPlayers;
+		} else if (axisPlayers.size == 0 && alliesPlayers.size > 0) {
+			axisPlayers = alliesPlayers;
+		} else {
+			return data; // Return default if no players in either team
+		}
+	}
+
+	// Calculate center of gravity for all players
+	firstOrigin = alliesPlayers[0] getOrigin();
+	minBounds[0] = firstOrigin[0];
+	minBounds[1] = firstOrigin[1];
+	minBounds[2] = firstOrigin[2];
+	maxBounds[0] = firstOrigin[0];
+	maxBounds[1] = firstOrigin[1];
+	maxBounds[2] = firstOrigin[2];
+
+	for (i = 0; i < players.size; i++) {
+		if (players[i].sessionstate == "playing") {
+			playerOrigin = players[i] getOrigin();
+			if (playerOrigin[0] < minBounds[0]) minBounds[0] = playerOrigin[0];
+			if (playerOrigin[1] < minBounds[1]) minBounds[1] = playerOrigin[1];
+			if (playerOrigin[2] < minBounds[2]) minBounds[2] = playerOrigin[2];
+
+			if (playerOrigin[0] > maxBounds[0]) maxBounds[0] = playerOrigin[0];
+			if (playerOrigin[1] > maxBounds[1]) maxBounds[1] = playerOrigin[1];
+			if (playerOrigin[2] > maxBounds[2]) maxBounds[2] = playerOrigin[2];
+		}
+	}
+
+	// Compute the middle point of the bounding box
+	overallCenter = ((minBounds[0] + maxBounds[0]) / 2, (minBounds[1] + maxBounds[1]) / 2, (minBounds[2] + maxBounds[2]) / 2);
+
+	// Compute the longest distance from the center to the farthest player
+	longestDistance = 0;
+	for (i = 0; i < players.size; i++) {
+		if (players[i].sessionstate == "playing") {
+			distanceToCenter = distance(overallCenter, players[i] getOrigin());
+			if (distanceToCenter > longestDistance) {
+				longestDistance = distanceToCenter;
+			}
+		}
+	}
+
+
+	// Calculate center position of allies team
+	alliesCenter = (0, 0, 0);
+	for (i = 0; i < alliesPlayers.size; i++) {
+		alliesCenter = alliesCenter + alliesPlayers[i] getOrigin();
+	}
+	alliesCenter = (alliesCenter[0] / alliesPlayers.size, alliesCenter[1] / alliesPlayers.size, alliesCenter[2] / alliesPlayers.size);
+
+	// Calculate center position of axis team
+	axisCenter = (0, 0, 0);
+	for (i = 0; i < axisPlayers.size; i++) {
+		axisCenter = axisCenter + axisPlayers[i] getOrigin();
+	}
+	axisCenter = (axisCenter[0] / axisPlayers.size, axisCenter[1] / axisPlayers.size, axisCenter[2] / axisPlayers.size);
+
+	directionVector = axisCenter - alliesCenter;
+	yawAngle = vectortoangles(directionVector);
+	data["angle"] = (85, yawAngle[1] + 90, 0);
+
+	// Adjust Z height based on the longest distance and add some elevation
+	zHeight = overallCenter[2] + (longestDistance * 1.8) + 200; // Base height + dynamic height + minimum elevation
+
+	// Return computed origin
+	data["origin"] = (overallCenter[0], overallCenter[1], zHeight);
+	data["distance"] = longestDistance;
+	data["status"] = true;
+
+	return data;
+}
+
+
+
+birdMove()
+{
+	self endon("disconnect");
+
+	// Wait untill other players connect and we have player to follow
+	waittillframeend;
+
+	// Already in bird view
+	if (self.streamerSystem_inBirdView) {
+		self.streamerSystem_inBirdView = false;
+		self.streamerSystem_freeSpectating = false;
+		if (level.debug_spectator) self iprintln("cbirdMove> canceled because bird view is already ON");
+		return;
+	}
+
+	self.streamerSystem_inBirdView = true;
+
+	if (level.debug_spectator) self iprintln(gettime() + " birdMove> runned");
+
+	// Wait till menu is opened
+	for (i = 0; ; i++)
+	{
+		if (self.pers["team"] != "streamer") // leaved spectator
+		{
+			if (level.debug_spectator) self iprintln("birdMove> canceled because team != streamer");
+			self.streamerSystem_inBirdView = false;
+		}
+		// Alive player that was followed spawned to spectators
+		if (level.streamerSystem_playerID == self getEntityNumber())
+		{
+			if (level.debug_spectator) self iprintln("birdMove> canceled because this player is followed");
+			self.streamerSystem_inBirdView = false;
+		}
+		// Time elapsed
+		if (i > 30)
+		{
+			if (level.debug_spectator) self iprintln("birdMove> canceled because conditions time 3s elapsed");
+			self.streamerSystem_inBirdView = false;
+		}
+
+
+		// All ready for cinematic move, exit
+		if (self.streamerSystem_inBirdView && /*self.streamerSystem_turnedOn &&*/ self.pers["streamerSystem_menu_opened"] && self.sessionstate == "spectator")
+			break;
+
+
+		// Canceled
+		if (self.streamerSystem_inBirdView == false) {
+			return;
+		}
+
+		wait level.fps_multiplier * 0.1;
+	}
+
+	if (level.debug_spectator) self iprintln(gettime() + " birdMove> doing cinematic for " + level.streamerSystem_player.name);
+
+
+
+	bird = computeBirdOrigin();
+
+	if (bird["status"] == false)
+	{
+		if (level.debug_spectator) self iprintln("cinematic2> cannot compute bird origin, aborting");
+		self.streamerSystem_inBirdView = false;
+		return;
+	}
+
+	self spawn(bird["origin"], bird["angle"]);
+
+	if (self.classname != "player")
+	{
+		// For some reason, sometimes classname of spectator is not player and linkto() func does not work
+		// Error: entity (classname: 'noclass') does not currently support linkTo:
+		// Its propably caused when spawn() was not called yet
+		// this should avoid error
+		self iprintln("birdMove> ^1self.classname != player");
+		return;
+	}
+
+	self setOrigin(bird["origin"]);
+	self setPlayerAngles(bird["angle"]);
+
+	self.spectatorLock = spawn("script_model", bird["origin"]);
+	self.spectatorLock.angles = bird["angle"];
+
+	self linkto(self.spectatorLock);
+
+	self.streamerSystem_freeSpectating = true;
+
+	time = getTime();
+	repositionTime = getTime();
+	reangleTime = getTime();
+
+	for(;;)
+	{
+		// Cinematic canceled or some key was pressed
+		if (!self.streamerSystem_inBirdView)
+		{
+			if (level.debug_spectator) self iprintln("birdMove> DONE because it was canceled");
+			break;
+		}
+		// Player changed team
+		if (self.pers["team"] != "streamer")
+		{
+			if (level.debug_spectator) self iprintln("birdMove> DONE because team is not streamer");
+			break;
+		}
+
+		bird = computeBirdOrigin();
+
+		if (bird["status"] == false)
+		{
+			if (level.debug_spectator) self iprintln("cinematic2> cannot compute bird origin, aborting");
+			break;
+		}
+
+		// Define hysteresis thresholds
+		if (bird["distance"] <= 50)
+			bird["distance"] = 50;
+		yawHysteresis = (50000) / bird["distance"];       // Offset for yaw changes
+
+
+		// Time elapsed for position update
+		if ((gettime() - time) > 1000)
+		{
+			//self iPrintLn("positionHysteresis: " + positionHysteresis + " yawHysteresis: " + yawHysteresis);
+
+			time = getTime();
+		}
+
+
+		// Time elapsed for position update
+		if ((gettime() - repositionTime) > 100)
+		{
+			//self iPrintLn("distance: " + bird["distance"] + " origin: " + bird["origin"] + " angle: " + bird["angle"]);
+
+			time = .1;
+			accel = time * 0;
+			self.spectatorLock moveTo(bird["origin"], time, accel, accel);
+			repositionTime = getTime();	
+		}
+
+		// Time elapsed for angle update
+		if ((gettime() - reangleTime) > 1000)
+		{
+			// Calculate the difference between current and target yaw
+			currentYaw = self.spectatorLock.angles[1];
+			targetYaw = bird["angle"][1];
+			yawDelta = currentYaw - targetYaw;
+			if (yawDelta < 0) yawDelta *= -1;
+
+			// Apply hysteresis for yaw
+			if (yawDelta > yawHysteresis)
+			{
+				time = 1;
+				accel = time * 0.25;
+				self.spectatorLock rotateTo(bird["angle"], time, accel, accel);
+				reangleTime = getTime();
+			}
+		}
+
+		//self setOrigin(self.spectatorLock.origin);
+		self setPlayerAngles(self.spectatorLock.angles);
+
+		wait level.frame;
+	}
+
+	self unlink();
+
+	self.streamerSystem_freeSpectating = false;
+
+	self.streamerSystem_inBirdView = false;
+}
+
+
+
+
+
+
+
+
 
 
 getRecommandedPlayer()
@@ -1514,65 +1889,4 @@ waitForSpectatorsInKillcam()
 	}
 
 	return true;
-}
-
-
-player_names()
-{
-	wait level.fps_multiplier * 0.123456;
-
-	for (;;)
-	{
-		wait level.fps_multiplier * 1;
-
-		maxTime = 0;
-		players = getentarray("player", "classname");
-		for(i = 0; i < players.size; i++)
-		{
-			player = players[i];
-
-			if (player.pers["team"] == "streamer")
-			{
-				player.pers["streamerSystem_streamerTime"]++;
-
-				// Save player with biggest time
-				if (player.pers["streamerSystem_streamerTime"] > maxTime)
-					maxTime = player.pers["streamerSystem_streamerTime"];
-			}
-			else
-				player.pers["streamerSystem_streamerTime"] = 0;
-		}
-
-		// There is player in streamer menu for atleast x seconds
-		if (maxTime > 15 && ((level.in_readyup && level.playersready) || (!level.in_readyup && level.in_strattime)))
-		{
-			wait level.fps_multiplier * 1;
-			players = getentarray("player", "classname");
-			for(i = 0; i < players.size; i++)
-			{
-				player = players[i];
-
-				// Player may disconnect due to wait
-				if (!isDefined(player)) continue;
-
-				if (player.pers["team"] == "allies" || player.pers["team"] == "axis")
-				{
-					// Empty name detection
-					name = removeColorsFromString(player.name, true); // true = remove only double colors
-
-					if (name != player.name)
-					{
-						player iprintlnbold(" ");
-						player iprintlnbold("^3Double colors were removed from your nickname for stream purposes.");
-						player iprintlnbold(" ");
-						player setClientCvar("name", name);
-
-						wait level.fps_multiplier * 0.1;
-					}
-				}
-			}
-		}
-	}
-
-
 }

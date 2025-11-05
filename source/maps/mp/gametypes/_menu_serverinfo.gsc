@@ -5,7 +5,7 @@ init()
 	addEventListener("onStartGameType", ::onStartGameType);
 	addEventListener("onCvarChanged",   ::onCvarChanged);
 
-	registerCvarEx("I", "scr_motd", "STRING", "Welcome. This server is running zPAM3.34");	// ZPAM_RENAME
+	registerCvarEx("I", "scr_motd", "STRING", "Welcome. This server is running zPAM4.01");	// ZPAM_RENAME
 
 	level.motd = "";
 	level.serverversion = "";
@@ -20,8 +20,10 @@ init()
 // Called again for every round in round-based gameplay
 onStartGameType()
 {
+	waittillframeend; // wait till game variables are set
 	generateGlobalServerInfo();
 }
+
 
 // This function is called when cvar changes value.
 // Is also called when cvar is registered
@@ -31,7 +33,9 @@ onCvarChanged(cvar, value, isRegisterTime)
 	// Server info update
 	if (!isRegisterTime && !game["firstInit"] && !isDefined(game["cvars"][cvar]["inQuiet"]) && cvar != "pam_mode_custom")
 	{
-		thread generateGlobalServerInfo();
+		generateGlobalServerInfo(); // regenerate server info
+
+		updateCvarsForAllPlayers();
 	}
 
 	switch(cvar)
@@ -45,7 +49,14 @@ onCvarChanged(cvar, value, isRegisterTime)
 // Called from menu wen serverinfo menu is opened
 updateServerInfo()
 {
-	self setClientCvarIfChanged("ui_motd", level.motd);
+	self updateCvarsForPlayer();
+}
+
+updateCvarsForPlayer()
+{
+	motd = level.motd;
+
+	self setClientCvarIfChanged("ui_motd", motd);
 	self setClientCvarIfChanged("ui_serverversion", level.serverversion);
 
 	// These are set from gametype
@@ -57,10 +68,17 @@ updateServerInfo()
 	self setClientCvarIfChanged("ui_serverinfo_right2", level.serverinfo_right2);
 }
 
+updateCvarsForAllPlayers()
+{
+	players = getentarray("player", "classname");
+	for(i = 0; i < players.size; i++) {
+		players[i] updateCvarsForPlayer();
+	}
+}
+
+
 generateGlobalServerInfo()
 {
-	waittillframeend; // wait untill all other server change functions are processed
-
 	// Generate motd
 	motd = level.scr_motd;
 	motd_final = "";
@@ -81,8 +99,34 @@ generateGlobalServerInfo()
 		else
 			motd_final += "" + motd[i];
 	}
-	level.motd = motd_final;
+	motd = motd_final;
 
+	// Replace zPAMx.xx pattern with zPAM4.00
+	motd_final = "";
+	i = 0;
+	while (i < motd.size)
+	{
+		// Look for "zPAM" followed by a digit, dot, digit, digit
+		if (
+			i + 6 < motd.size &&
+			motd[i] == "z" &&
+			motd[i+1] == "P" &&
+			motd[i+2] == "A" &&
+			motd[i+3] == "M" &&
+			isDigit(motd[i+4]) &&
+			motd[i+5] == "." &&
+			isDigit(motd[i+6]) &&
+			isDigit(motd[i+7])
+		)
+		{
+			motd_final += "zPAM4.01"; // ZPAM_RENAME
+			i += 8;
+			continue;
+		}
+		motd_final += motd[i];
+		i++;
+	}
+	level.motd = motd_final;
 
 
 
@@ -182,3 +226,4 @@ generateGlobalServerInfo()
 	level.serverinfo_right1 = title;
 	level.serverinfo_right2 = value;
 }
+

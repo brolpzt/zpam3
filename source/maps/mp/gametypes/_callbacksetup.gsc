@@ -109,21 +109,40 @@ CodeCallback_StartGameType()
 	}
 }
 
+/*================
+Called by code before map change, map restart, or server shutdown.
+  fromScript: true if map change was triggered from a script, false if from a command.
+  bComplete: true if map change or restart is complete, false if it's a round restart so persistent variables are kept.
+  shutdown: true if the server is shutting down, false otherwise.
+  source: "map", "fast_restart", "map_restart", "map_rotate", "shutdown"
+Return false to prevent map change / restart.
+================*/
+CodeCallback_StopGameType(fromScript, bComplete, shutdown, source) 
+{
+	/#
+	println("##### " + gettime() + " " + level.frame_num + " ##### Call: maps/mp/gametypes/_callback.gsc::CodeCallback_StopGameType(" + fromScript + ", " + bComplete + ", " + shutdown + ", " + source + ")");
+	#/
+
+	// Process onStopGameType events
+	for (i = 0; i < level.events.onStopGameType.size; i++)
+	{
+		ret = level thread [[level.events.onStopGameType[i]]](fromScript, bComplete, shutdown, source);
+
+		if (isDefined(ret) && ret == false) {
+			/#
+			println("##### " + gettime() + " " + level.frame_num + " ##### CANCEL ^1map change / restart");
+			#/
+			return false; // prevent map change / restart
+		}
+	}
+
+	return true;
+}
 
 
 /*================
 Called when a player begins connecting to the server.
 Called again for every map change or tournement restart.
-
-Return undefined if the client should be allowed, otherwise return
-a string with the reason for denial.
-
-Otherwise, the client will be sent the current gamestate
-and will eventually get to ClientBegin.
-
-firstTime will be qtrue the very first time a client connects
-to the server machine, but qfalse on map changes and tournement
-restarts.
 
 Default values of self (defined in game engine)
 self.psoffsettime 		= 0
@@ -149,12 +168,18 @@ CodeCallback_PlayerConnect()
 	println("##### " + gettime() + " " + level.frame_num + " ##### Connecting: " + self.name);
 	#/
 
+	// Determine if this is first time player is connecting - useful to termine new player connection between rounds (map_restart(true) always calls PlayerConnect even if player was connected before)
+	if (!isDefined(self.pers["callbacksetup_firstTime"]))
+		self.pers["callbacksetup_firstTime"] = true;
+	else
+		self.pers["callbacksetup_firstTime"] = false;
+
 	self.sessionteam = "none"; // show player in "none" team in scoreboard while connecting
 
 	if (!isDefined(self.pers["antilagTimeOffset"]))
 		self.pers["antilagTimeOffset"] = 0;
 
-	self thread maps\mp\gametypes\global\events::notifyConnecting();
+	self thread maps\mp\gametypes\global\events::notifyConnecting(self.pers["callbacksetup_firstTime"]);
 
 	// Wait here until player is fully connected
 	self waittill("begin");
@@ -165,7 +190,7 @@ CodeCallback_PlayerConnect()
 
 	self thread emptyName();
 
-	self thread maps\mp\gametypes\global\events::notifyConnected();
+	self thread maps\mp\gametypes\global\events::notifyConnected(self.pers["callbacksetup_firstTime"]);
 
 	// If pam is not installed correctly, spawn outside
 	if (level.pam_installation_error)
@@ -326,7 +351,14 @@ CodeCallback_PlayerDamage(eInflictor, eAttacker, iDamage, iDFlags, sMeansOfDeath
 	if (sMeansOfDeath == "MOD_GRENADE_SPLASH" && !isAlive(self))
 		return;
 
-	damageFeedback = 1;
+	damageFeedbackSoundCount = 1; // how many times to play damage feedback sound
+	damageFeedbackEnemyCount = 1; // number of enemies that has been hit in same frame by this attacker (for double-cross damage icon)
+
+	// For shotgun there will be multiple hits in one frame for one player
+	// For other weapons / nades there might be multiple hits in one frame for multiple players
+
+
+	// Shotgun kill / 1 player = sound 2x
 
 
 	// Save info about hits
@@ -337,6 +369,13 @@ CodeCallback_PlayerDamage(eInflictor, eAttacker, iDamage, iDFlags, sMeansOfDeath
 		if (!isDefined(eAttacker.hitId))
 			eAttacker.hitId = 0;			// inited to 0, but will be incremented. 1 then means first bullet
 		eAttacker.hitId++;
+
+		// Create variable to hold data about players hit in this frame
+		if (!isDefined(eAttacker.hitPlayers))
+			eAttacker.hitPlayers = [];
+		if (!isDefined(eAttacker.hitPlayers[self_num])) {
+			eAttacker.hitPlayers[self_num] = self_num;
+		}
 
 		// Create variable to hold hit data
 		if (!isDefined(eAttacker.hitData))
@@ -355,8 +394,13 @@ CodeCallback_PlayerDamage(eInflictor, eAttacker, iDamage, iDFlags, sMeansOfDeath
 
 		self thread hitDataAutoRestart(eAttacker, self_num);
 		eAttacker thread hitIdAutoRestart();
-	}
+		eAttacker thread hitPlayersAutoRestart();
 
+		// Since damage feedback is called only once per frame, solve "multi-hit" in one frame by setting id of hit, which corresponds to how many times player was hit in one frame
+		damageFeedbackSoundCount = eAttacker.hitId;
+		// If this is second player that was hit by this attacker in same frame, set double feedback
+		damageFeedbackEnemyCount = int(eAttacker.hitPlayers.size);
+	}
 
 
 	// 1 = print debug messages to player with name eyza
@@ -399,7 +443,8 @@ CodeCallback_PlayerDamage(eInflictor, eAttacker, iDamage, iDFlags, sMeansOfDeath
 				boxLeft = 11;
 				boxRight = 11;
 			}
-			stance = self maps\mp\gametypes\global\player::getStance(); // prone crouch stand
+			// prone crouch stand 
+			stance = self getStance(); // (CoD2x 1.4.5.1)
 			if (stance == "prone")
 			{
 				boxDown = 8;
@@ -578,12 +623,12 @@ CodeCallback_PlayerDamage(eInflictor, eAttacker, iDamage, iDFlags, sMeansOfDeath
 		eAttacker.hitData[self_num].shotgun_distance = dist;
 
 
-		// Make sure pellets do only once a feedback damage
+		// Make sure pellets do only once a feedback damage sound
 		// This is the first pellet
 		if (eAttacker.hitData[self_num].id == 1)
-			damageFeedback = 1;
+			damageFeedbackSoundCount = 1;
 		else
-			damageFeedback = 0;
+			damageFeedbackSoundCount = 0;
 
 
 		// Range 0-250   (1 pellet needed for kill)
@@ -609,7 +654,7 @@ CodeCallback_PlayerDamage(eInflictor, eAttacker, iDamage, iDFlags, sMeansOfDeath
 			if (isKill)
 			{
 				iDamage = 100;
-				damageFeedback = 2; // Do big damage feedback, because this bullet kills the player and the others are canceled due to this
+				damageFeedbackSoundCount = 2; // Do big damage feedback, because this bullet kills the player and the others are canceled due to this
 				if (level.debug_shotgun) eAttacker iprintln("^1Distance " + int(dist) + " | close range 0-250 | KILL");
 				if (eyza_debug) printToEyza("### Consistent shotgun: attacker:"+eAttacker.name+" | victim:"+self.name+" | distance:" + int(dist) + " | hitLoc:" + sHitLoc + " | close range 0-250 | KILL"); // EYZA_DEBUG
 				eAttacker.hitData[self_num].adjustedBy = "consistent_shotgun_1_kill"; // Range 1, kill
@@ -701,11 +746,10 @@ CodeCallback_PlayerDamage(eInflictor, eAttacker, iDamage, iDFlags, sMeansOfDeath
 	[[level.onAfterPlayerDamaged]](eInflictor, eAttacker, iDamage, iDFlags, sMeansOfDeath, sWeapon, vPoint, vDir, sHitLoc, timeOffset);
 
 	// Damage feedback
-	if (damageFeedback >= 1)
+	if (damageFeedbackSoundCount >= 1)
 	{
-		//eAttacker iprintln("^6DMG feedback" + i);
 		if(isPlayer(eAttacker) && eAttacker != self && !(iDFlags & level.iDFLAGS_NO_PROTECTION))
-			eAttacker thread maps\mp\gametypes\_damagefeedback::updateDamageFeedback(self, damageFeedback);
+			eAttacker thread maps\mp\gametypes\_damagefeedback::updateDamageFeedback(self, damageFeedbackSoundCount, damageFeedbackEnemyCount);
 	}
 }
 
@@ -746,6 +790,13 @@ hitIdAutoRestart()
 	waittillframeend;
 	self.hitId = undefined;
 }
+
+hitPlayersAutoRestart()
+{
+	waittillframeend;
+	self.hitPlayers = undefined;
+}
+
 
 damageScale(dist, distStart, distEnd, hpStart, hpEnd)
 {

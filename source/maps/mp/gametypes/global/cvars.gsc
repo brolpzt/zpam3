@@ -15,6 +15,7 @@ Init()
 Register_Shared_Cvars()
 {
 	sVar = maps\mp\gametypes\global\_global::registerCvar;
+	sVarEx = maps\mp\gametypes\global\_global::registerCvarEx;
 
 
 	// /# #/ 		This will execute any script between /# #/
@@ -104,7 +105,10 @@ Register_Shared_Cvars()
 	[[sVar]]("scr_replace_russian", "BOOL", 0);              // level.scr_replace_russian  (can be changed only at start of the game, in progress it will mess up britsh/russians scripts...)
 	[[sVar]]("scr_friendlyfire", "INT", 0, 0, 3); 	// level.scr_friendlyfire on, off, reflect, shared
 
-	[[sVar]]("scr_posters", "BOOL", 0);              // level.scr_posters
+	[[sVarEx]]("I", "scr_posters", "BOOL", 0);              // level.scr_posters, ignore change
+
+	[[sVar]]("sv_cracked", "BOOL", 0);		// CoD2x
+	[[sVar]]("g_competitive", "BOOL", 1);   // CoD2x
 }
 
 
@@ -117,7 +121,12 @@ onCvarChanged(cvar, value, isRegisterTime)
 	{
 		case "sv_fps":
 
-			if (value == 30)
+			if (value == 40)
+			{
+				level.fps_multiplier = 2.0;
+				level.frame = .025;
+			}
+			else if (value == 30)
 			{
 				level.fps_multiplier = 1.51382;
 				level.frame = .033;
@@ -199,6 +208,9 @@ onCvarChanged(cvar, value, isRegisterTime)
 				level thread restartMap();
 			}
 			return true;
+
+		case "sv_cracked": return true;
+		case "g_competitive": return true;
 	}
 	return false;
 }
@@ -206,6 +218,9 @@ onCvarChanged(cvar, value, isRegisterTime)
 
 restartMap()
 {
+	if (!maps\mp\gametypes\_matchinfo::canMapBeChanged())
+		return;
+		
 	iprintln("Restarting map...");
 	wait level.fps_multiplier * 2;
 	map(level.mapname, false);

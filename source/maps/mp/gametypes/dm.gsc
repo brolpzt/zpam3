@@ -217,17 +217,11 @@ onStartGameType()
 Called when a player begins connecting to the server.
 Called again for every map change or tournement restart.
 
-Return undefined if the client should be allowed, otherwise return
-a string with the reason for denial.
-
-Otherwise, the client will be sent the current gamestate
-and will eventually get to ClientBegin.
-
 firstTime will be qtrue the very first time a client connects
 to the server machine, but qfalse on map changes and tournement
 restarts.
 ================*/
-onConnecting()
+onConnecting(firstTime)
 {
 	self.statusicon = "hud_status_connecting";
 	self.sessionteam = "spectator";
@@ -377,6 +371,24 @@ self is the player that was killed.
 */
 onPlayerKilled(eInflictor, attacker, iDamage, sMeansOfDeath, sWeapon, vDir, sHitLoc, psOffsetTime, deathAnimDuration)
 {
+	// Add score to Deaths
+	if(!isdefined(self.switching_teams))
+	{
+		// Player's stats - increase kill points (_player_stat.gsc)
+		if (!level.in_readyup && level.matchstarted && !level.mapended)
+			self maps\mp\gametypes\_player_stat::AddDeath();
+	}
+
+	if(isPlayer(attacker) && attacker != self)
+	{
+		// Player's stats - increase kill points (_player_stat.gsc)
+		if (!level.in_readyup && level.matchstarted && !level.mapended)
+		{
+			attacker maps\mp\gametypes\_player_stat::AddKill();
+			attacker maps\mp\gametypes\_player_stat::AddScore(1);
+		}
+	}
+	
 }
 
 // Called as last funtction after all onPlayerKilled events are processed
@@ -693,6 +705,7 @@ startGame()
 			level.clock.x = 0;
 		}
 
+		lastTimeMatchDataUpload = 0;
 		time_before_timeout = 0;
 		for(;;)
 		{
@@ -701,6 +714,15 @@ startGame()
 			timepassed = timepassed - level.timeout_elapsedTime;	// exclude time of timeout
 
 			//iprintln(timepassed);
+
+			// Each minute send match data
+			if (timepassed >= lastTimeMatchDataUpload + 60)
+			{
+				lastTimeMatchDataUpload = timepassed;
+
+				// Upload match data
+				maps\mp\gametypes\_matchinfo::uploadMatchData("dm minute", false, true);
+			}
 
 			// Freeze time if in timeout
 			if (level.in_timeout)

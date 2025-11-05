@@ -17,6 +17,10 @@ init()
 		// Ready-up
 		precacheString2("STRING_READYUP_WAITING_ON", &"Waiting on");
 		precacheString2("STRING_READYUP_PLAYERS", &"Players");
+		precacheString2("STRING_READYUP_MISSING_PLAYERS", &"Missing Players");
+		precacheString2("STRING_READYUP_MIXED_PLAYERS", &"Mixed Players");
+		precacheString2("STRING_READYUP_UNJOINED_PLAYERS", &"Unjoined Players");
+		precacheString2("STRING_READYUP_BADLY_NAMED_PLAYERS", &"Misnamed Players");
 		precacheString2("STRING_READYUP_YOUR_STATUS", &"Your Status");
 		precacheString2("STRING_READYUP_READY", &"Ready");
 		precacheString2("STRING_READYUP_NOT_READY", &"Not Ready");
@@ -68,7 +72,6 @@ init()
 	level.readyup_runned = false;
 	level.hud_readyup_offsetX = -50;
 	level.hud_readyup_offsetY = 20;
-
 
 	// Define default variables
 	if (!isDefined(game["Do_Ready_up"]))
@@ -459,7 +462,8 @@ playerReadyUpThread()
 	hudKillingStatusVisible = false;
 	hudAimTrainerStatusVisible = false;
 	aimTrainerStatusLast = -1;
-	teamLast = self.pers["team"];
+	teamLast = "";
+	nickLast = self.name;
 
 	while(!level.playersready)
 	{
@@ -515,20 +519,43 @@ playerReadyUpThread()
 
 
 
-		// Team change
+		// Team changed to streamer or spectator, set ready
 		if (teamLast != self.pers["team"] && (self.pers["team"] == "streamer" || self.pers["team"] == "spectator") && self.isReady == false)
 		{
 			setReady();
-			level thread Check_All_Ready();
 		}
+		// Team changed from streamer or spectator, unset ready
 		if (teamLast != self.pers["team"] && (teamLast == "streamer" || teamLast == "spectator") && self.pers["team"] != "streamer" && self.pers["team"] != "spectator" && self.isReady)
 		{
 			unsetReady();
-			level thread Check_All_Ready();
 		}
+		if (teamLast != self.pers["team"])
+		{
+			// If team joined streamer, check if all players are ready only if if there is atleast one player
+			if (self.pers["team"] == "streamer") {
+				players = getentarray("player", "classname");
+				for(i = 0; i < players.size; i++){
+					player = players[i];
+					if (player.pers["team"] == "allies" || player.pers["team"] == "axis") {
+						level thread Check_All_Ready();
+						break;
+					}
+				}
+			} else {
+				level thread Check_All_Ready();
+			}
+		}		
 		teamLast = self.pers["team"];
 
 
+		// Name change (in match mode we might wait for misnamed players)
+		if (matchIsActivated() && nickLast != self.name && (self.pers["team"] == "allies" || self.pers["team"] == "axis"))
+		{
+			nickLast = self.name;
+
+			// Check if all players are ready
+			level thread Check_All_Ready();
+		}
 
 
 		if(self useButtonPressed() && !self.flying)
@@ -719,20 +746,25 @@ setAimTraining()
 // Set level.playersready to true if all player is ready
 Check_All_Ready()
 {
-	waittillframeend; // wait untill player is fully connected / disconnected
-
+	// Readyup is over
 	if (level.playersready)
 		return;
 
+	// Make sure only 1 thread is running
+	level notify("readyup_checkAllReady");
+	level endon("readyup_checkAllReady");
+
+	if (matchIsActivated() && game["scr_matchinfo"] != 0) {
+		level thread maps\mp\gametypes\_matchinfo::generateMatchDescriptionDebounced();
+	}
+
+	waittillframeend; // wait untill player is fully connected / disconnected + wait for match description to be generated
+
+	// Give players a few time to change their status if he was the last one even if all players are ready
+	wait level.fps_multiplier * 1;
 
 	if (areAllPlayersReady())
-	{
-		// Give players a few time to change their status if he was tle last one even if all players are ready
-		wait level.fps_multiplier * 1;
-
-		if (areAllPlayersReady())
-			level.playersready = true;
-	}
+		level.playersready = true;
 }
 
 areAllPlayersReady()
@@ -741,6 +773,10 @@ areAllPlayersReady()
 
 	if (players.size == 0)
         return false;
+
+	// If there is any problem with players, dont allow to start
+	if (level.match_mixedPlayers > 0 || level.match_missingPlayers > 0 || level.match_unjoinedPlayers > 0 || level.match_badlyNamedPlayers > 0)
+		return false;
 
 	for(i = 0; i < players.size; i++)
 	{
@@ -934,31 +970,62 @@ Update_Players_Count()
 	while(!level.playersready)
 	{
 		// Count player not ready up
-		notready = 0;
-		notReadyPlayer = undefined;
 		players = getentarray("player", "classname");
-		for(i = 0; i < players.size; i++)
+ 
+		if (level.match_missingPlayers > 0)
 		{
-			player = players[i];
-			if (!player.isReady)
+			level.notreadyhud setValue(level.match_missingPlayers);
+			level.playerstext setText(game["STRING_READYUP_MISSING_PLAYERS"]);
+			level.playerstext.color = (1, .66, .66); // red
+		} 
+		else if (level.match_mixedPlayers > 0)
+		{
+			level.notreadyhud setValue(level.match_mixedPlayers);
+			level.playerstext setText(game["STRING_READYUP_MIXED_PLAYERS"]);
+			level.playerstext.color = (1, .66, .66); // red
+		}
+		else if (level.match_unjoinedPlayers > 0)
+		{
+			level.notreadyhud setValue(level.match_unjoinedPlayers);
+			level.playerstext setText(game["STRING_READYUP_UNJOINED_PLAYERS"]);
+			level.playerstext.color = (1, .66, .66); // red
+		}
+		else if (level.match_badlyNamedPlayers > 0)
+		{
+			level.notreadyhud setValue(level.match_badlyNamedPlayers);
+			level.playerstext setText(game["STRING_READYUP_BADLY_NAMED_PLAYERS"]);
+			level.playerstext.color = (1, .66, .66); // red
+		}
+		else {
+			notready = 0;
+			notReadyPlayer = undefined;
+			for(i = 0; i < players.size; i++)
 			{
-				notready++;
+				player = players[i];
+				if (!player.isReady)
+				{
+					notready++;
 
-				notReadyPlayer = player;
+					notReadyPlayer = player;
+				}
 			}
+
+			// Last man
+			if (players.size > 4)	// If its 3v3 or more
+			{
+				if (notready == 1 && notReadyPlayer.lastMan == false)
+				{
+					notReadyPlayer.lastMan = true;
+					notReadyPlayer thread playLastManSound();
+				}
+			}
+
+			level.notreadyhud setValue(notready);
+			level.playerstext setText(game["STRING_READYUP_PLAYERS"]);
+			level.playerstext.color = (.8, 1, 1); // blue
 		}
 
-		// Last man
-		if (players.size > 4)	// If its 3v3 or more
-		{
-			if (notready == 1 && notReadyPlayer.lastMan == false)
-			{
-				notReadyPlayer.lastMan = true;
-				notReadyPlayer thread playLastManSound();
-			}
-		}
 
-		level.notreadyhud setValue(notready);
 
 		wait level.fps_multiplier * .1;
 	}
@@ -1220,7 +1287,7 @@ HUD_WaitingOn_X_Players()
 	level.notreadyhud.alignY = "middle";
 	level.notreadyhud.fontScale = 1.2;
 	level.notreadyhud.font = "default";
-	level.notreadyhud.color = (.98, .98, .60);
+	level.notreadyhud.color = (.98, .98, .60); // yellow
 
 	// Players
 	level.playerstext = newHudElem2();
@@ -1231,7 +1298,7 @@ HUD_WaitingOn_X_Players()
 	level.playerstext.alignY = "middle";
 	level.playerstext.fontScale = 1.2;
 	level.playerstext.font = "default";
-	level.playerstext.color = (.8, 1, 1);
+	level.playerstext.color = (.8, 1, 1); // blue
 	level.playerstext setText(game["STRING_READYUP_PLAYERS"]);
 
     level waittill("rupover");

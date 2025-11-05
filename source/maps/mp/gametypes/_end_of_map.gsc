@@ -45,22 +45,30 @@ Do_Map_End()
 		player [[level.spawnIntermission]]();
 	}
 
-	wait level.fps_multiplier * 12;
+	// Send final scoreboard
+	if (matchIsActivated())  {
+		maps\mp\gametypes\_matchinfo::finishMap();
+	} 
 
+	wait level.fps_multiplier * 6;
 
-	if (game["is_public_mode"])
-	{
-		logPrint("MapEnd;\n");
-		if (!level.pam_mode_change)
+	logPrint("MatchEnd;\n");
+
+    // Avoid map change if pam_mode is changing
+	if (level.pam_mode_change)
+		return;
+
+	// Match-mode
+	if (matchIsActivated())  {
+		maps\mp\gametypes\_matchinfo::endMap();
+	} 
+	// Public mode
+	else if (game["is_public_mode"])  {
 		exitLevel(false); // load next map in map_rotation
 	}
-
 	// In match-mode just do fast_restart
-	else
-	{
-		logPrint("MatchEnd;\n");
-		if (!level.pam_mode_change)
-			map_restart(false); // fast_restart
+	else {	
+		map_restart(false); // fast_restart
 	}
 }
 

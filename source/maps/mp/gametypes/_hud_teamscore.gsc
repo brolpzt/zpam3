@@ -88,6 +88,12 @@ onConnected()
 
 onSpawned()
 {
+	// Hide score for streamer
+	if (self.pers["team"] == "streamer") {
+		hideScore(0);
+		return;
+	}
+
 	// Show score
 	if (self isEnabled())
 		self showScore();
@@ -219,7 +225,12 @@ fadeInAllHUD(animation)
 }
 fadeInPlayerHUD(animation)
 {
-	// Score is visible yet
+	if (self.pers["team"] == "streamer") {
+		hideScore(animation);
+		return;
+	}
+
+	// Score is already visible
 	if (self.hud_alliedicon.alpha == 1)
 		return;
 
@@ -249,10 +260,10 @@ fadeOutPlayerHUD(animation)
 	if(isEnabled())
 		return;
 
-	if (self.pers["team"] == "spectator" || self.pers["team"] == "streamer")
+	if (self.pers["team"] == "spectator")
 		return;
 
-	// Score is hided yet
+	// Score is already hidden
 	if (self.hud_alliedicon.alpha == 0)
 		return;
 

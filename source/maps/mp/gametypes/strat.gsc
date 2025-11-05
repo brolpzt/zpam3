@@ -47,6 +47,9 @@ main()
 precache()
 {
 	precacheStatusIcon("compassping_enemyfiring"); // for streamers
+	precacheShader("objective");
+	precacheShader("objectiveA");
+	precacheShader("objectiveB");
 
 	precacheString2("STRING_FLY_ENABLED", &"Enabled");
 	precacheString2("STRING_FLY_DISABLED", &"Disabled");
@@ -116,6 +119,48 @@ onStartGameType()
 
 
 
+	// Find bombzones (may be 1 bombzone or 2 bomzones A and B)
+	bombzones = getentarray("bombzone", "targetname");
+	array = [];
+	for(i = 0; i < bombzones.size; i++)
+	{
+		bombzone = bombzones[i];
+
+		if(isdefined(bombzone.script_bombmode_original) && isdefined(bombzone.script_label))
+			array[array.size] = bombzone;
+	}
+
+	if(array.size == 2)
+	{
+		bombzone0 = array[0];
+		bombzone1 = array[1];
+		bombzoneA = undefined;
+		bombzoneB = undefined;
+
+		if(bombzone0.script_label == "A" || bombzone0.script_label == "a")
+		{
+			bombzoneA = bombzone0;
+			bombzoneB = bombzone1;
+		}
+		else if(bombzone0.script_label == "B" || bombzone0.script_label == "b")
+		{
+			bombzoneA = bombzone1;
+			bombzoneB = bombzone0;
+		}
+
+		objective_add(0, "current", bombzoneA.origin, "objectiveA");
+		objective_add(1, "current", bombzoneB.origin, "objectiveB");
+	}
+	else if (array.size == 1)
+	{
+		bombzoneA = array[0];
+
+		objective_add(0, "current", bombzoneA.origin, "objectiveA");
+	}
+
+
+
+
 	thread maps\mp\gametypes\_pam::PAM_Header();
 	level Show_HUD_Global();
 
@@ -134,17 +179,11 @@ onStartGameType()
 Called when a player begins connecting to the server.
 Called again for every map change or tournement restart.
 
-Return undefined if the client should be allowed, otherwise return
-a string with the reason for denial.
-
-Otherwise, the client will be sent the current gamestate
-and will eventually get to ClientBegin.
-
 firstTime will be qtrue the very first time a client connects
 to the server machine, but qfalse on map changes and tournement
 restarts.
 ================*/
-onConnecting()
+onConnecting(firstTime)
 {
 	self.statusicon = "hud_status_connecting";
 }
@@ -799,6 +838,15 @@ Run_Strat()
 		self.recordSlots[i].angles = [];
 	}
 
+	self.clock = newClientHudElem2(self);
+	self.clock.font = "default";
+	self.clock.fontscale = 2;
+	self.clock.horzAlign = "center_safearea";
+	self.clock.vertAlign = "top";
+	self.clock.color = (1, 1, 1);
+	self.clock.x = -25;
+	self.clock.y = 445;
+	self.clock setTimer(0.001);
 
 	// Ignore bots
 	if (self.pers["isBot"])
@@ -1583,17 +1631,7 @@ playRecords()
 	self iprintlnbold(" ");
 	self iprintlnbold(" ");
 
-	if (isDefined(self.clock))
-		self.clock destroy2();
 
-	self.clock = newClientHudElem2(self);
-	self.clock.font = "default";
-	self.clock.fontscale = 2;
-	self.clock.horzAlign = "center_safearea";
-	self.clock.vertAlign = "top";
-	self.clock.color = (1, 1, 1);
-	self.clock.x = -25;
-	self.clock.y = 445;
 	self.clock setTimer(2 * 60);
 
 
@@ -1613,7 +1651,7 @@ playRecords()
 	while (self.replayedRecords != records)
 		wait level.fps_multiplier * .1;
 
-	self.clock destroy2();
+	self.clock setTimer(0.001);
 
 	self iprintln("Playing finished");
 }
