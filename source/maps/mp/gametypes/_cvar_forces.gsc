@@ -7,6 +7,7 @@ init()
     setCvar("rate", "25000");
     setCvar("sv_maxRate", "25000");
     setCvar("sv_pure", "1");
+	setCvar("snaps", 40);
 
 	// CoD2x - set competitive settings (like com_maxfps etc)
 	// This will be forced to all players
