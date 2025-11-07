@@ -1,20 +1,20 @@
 cg_hudRadarMapImage
-radar_mp_burgundy
+radar_mp_leningrad_mjr
 
 cg_hudRadarEntityScale
-0.024
+0.0242
 
 cg_hudRadarEntityOffsetX
-40.3
+55.27
 
 cg_hudRadarEntityOffsetY
--22
+-45.48
 
 cg_hudRadarMapImageRotation
-0
+-90
 
 cg_hudRadarMapImageOffsetX
--15
+6
 
 cg_hudRadarMapImageOffsetY
-4
+3

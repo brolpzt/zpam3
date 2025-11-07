@@ -1,20 +1,20 @@
 cg_hudRadarMapImage
-radar_mp_burgundy
+radar_mp_breakout_tls
 
 cg_hudRadarEntityScale
-0.024
+0.0217
 
 cg_hudRadarEntityOffsetX
-40.3
+-55.14
 
 cg_hudRadarEntityOffsetY
--22
+58.12
 
 cg_hudRadarMapImageRotation
-0
+-90
 
 cg_hudRadarMapImageOffsetX
--15
+0
 
 cg_hudRadarMapImageOffsetY
-4
+5
